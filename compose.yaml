@@ -1,0 +1,17 @@
+services:
+  java-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: java-app
+    restart: unless-stopped
+    init: true
+    ports:
+      - "8080:8080"  # Exposes the default Spring Boot port
+    # env_file: ./.env  # Uncomment if .env file exists
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
