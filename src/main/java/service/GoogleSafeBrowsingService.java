@@ -4,26 +4,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 import java.util.*;
-import java.io.InputStream;
-import java.io.IOException;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class GoogleSafeBrowsingService {
-    private static final String API_KEY;
-    
-    static {
-        Properties properties = new Properties();
-        try (InputStream input = GoogleSafeBrowsingService.class.getClassLoader().getResourceAsStream("application.properties")) {
-            properties.load(input);
-            API_KEY = properties.getProperty("GOOGLE_API_KEY");
-        } catch (IOException e) {
-            throw new RuntimeException("Error loading API key", e);
-        }
+
+    @Value("${google.api.key:}")
+    private String apiKey;
+
+    private String apiUrl() {
+        return "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=" + apiKey;
     }
-    private static final String API_URL = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=" + API_KEY;
 
     public boolean isUrlMalicious(String url) {
         if (url == null || url.isBlank()) return false;
+        if (apiKey == null || apiKey.isBlank()) return false; // no API key configured
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -42,7 +37,7 @@ public class GoogleSafeBrowsingService {
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(API_URL, request, Map.class);
+        ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl(), request, Map.class);
 
         Map responseBody = response.getBody();
         return responseBody != null && responseBody.containsKey("matches");
