@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Alerta de Golpes - Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial; margin: 2rem; background:#f7f9fb; }
+    h1 { font-size:1.4rem; }
+    form { display:flex; flex-direction:column; gap:.75rem; max-width:640px; }
+    textarea { width:100%; min-height:140px; padding:.75rem; font-family:inherit; }
+    select,input[type=text] { padding:.5rem; }
+    button { background:#0d6efd; color:#fff; border:none; padding:.75rem 1.25rem; cursor:pointer; border-radius:4px; font-weight:600; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .result { margin-top:1.5rem; padding:1rem; border-radius:6px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.08); white-space:pre-wrap; }
+    .danger { border-left:6px solid #dc3545; }
+    .safe { border-left:6px solid #198754; }
+    .loading { opacity:.6; }
+    footer { margin-top:3rem; font-size:.75rem; color:#555; }
+  </style>
+</head>
+<body>
+  <h1>Verificação de Golpes</h1>
+  <p>Cole abaixo a mensagem que você recebeu. Vamos analisar e dizer se é suspeita de golpe.</p>
+  <form id="formVerificacao">
+    <label for="mensagem">Mensagem recebida:</label>
+    <textarea name="mensagem" id="mensagem" placeholder="Cole aqui a mensagem..." required></textarea>
+    <label for="url">URL (opcional):</label>
+    <input type="text" id="url" name="url" placeholder="https://exemplo.com" />
+    <button id="btnVerificar" type="submit">Analisar</button>
+  </form>
+  <div id="saida"></div>
+
+  <script>
+    const form = document.getElementById('formVerificacao');
+    const saida = document.getElementById('saida');
+    const btn = document.getElementById('btnVerificar');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      saida.innerHTML = '';
+      btn.disabled = true; btn.classList.add('loading');
+      try {
+        const payload = {
+          mensagem: document.getElementById('mensagem').value.trim(),
+          url: (document.getElementById('url').value || '').trim(),
+          canal: 'outro'
+        };
+        const resp = await fetch('/api/verificacao/verificar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error('Falha na requisição: ' + resp.status);
+        const data = await resp.json();
+        const div = document.createElement('div');
+        div.className = 'result ' + (data.seguro ? 'safe' : 'danger');
+        let html = `Resultado: <strong>${data.seguro ? 'Seguro' : 'Suspeito'}</strong><br><br>Detalhes:\n${data.detalhe}`;
+        if (data.url) {
+          html += `\n\nURL analisada: ${data.url}`;
+          if (typeof data.urlSuspeita !== 'undefined' && data.urlSuspeita !== null) {
+            html += `\nStatus da URL: ${data.urlSuspeita ? 'Suspeita/Maliciosa' : 'Sem registros de ameaça'}`;
+          }
+          if (data.urlDetalhe) {
+            html += `\n${data.urlDetalhe}`;
+          }
+        }
+        div.innerHTML = html;
+        saida.appendChild(div);
+      } catch (err) {
+        const div = document.createElement('div');
+        div.className = 'result danger';
+        div.textContent = 'Erro: ' + err.message;
+        saida.appendChild(div);
+      } finally {
+        btn.disabled = false; btn.classList.remove('loading');
+      }
+    });
+  </script>
+
+  <footer>Demo local. Em produção, proteger o endpoint com autenticação / rate limit e registrar auditoria.</footer>
+</body>
+</html>

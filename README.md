@@ -1,36 +1,129 @@
-## Running the Project with Docker
+# Alerta Valores - Detector de Golpes do Banco Central
 
-This project provides a Docker setup for building and running the Java Spring Boot application using Eclipse Temurin JDK 21. The Docker configuration uses a multi-stage build for efficient image creation and runs the app as a non-root user for security.
+Este projeto implementa uma API para detectar tentativas de golpe relacionadas ao sistema "Valores a Receber" do Banco Central do Brasil.
 
-### Requirements
-- **Java Version:** Eclipse Temurin JDK 21 (as specified in the Dockerfile)
-- **Build Tool:** Maven Wrapper (included in the project)
+## Sobre o Projeto
 
-### Build and Run Instructions
-1. **Ensure Docker and Docker Compose are installed on your system.**
-2. **Build and start the application:**
-   ```sh
-   docker compose up --build
-   ```
-   This will build the image using the provided `Dockerfile` and start the service defined in `docker-compose.yml`.
+O sistema analisa mensagens e URLs suspeitas para identificar possíveis golpes relacionados ao serviço "Valores a Receber" do Banco Central, verificando:
 
-### Service Details
+1. URLs suspeitas ou diferentes do site oficial (https://valoresareceber.bcb.gov.br)
+2. Solicitações de pagamento (o serviço é totalmente gratuito)
+3. Solicitações de dados pessoais (o BC nunca solicita por mensagem)
+4. Menções a cartão de crédito (não existe recall ou devolução de cartão)
+5. Promessas de valores específicos (o BC nunca informa valores por mensagem)
+
+## Como Executar
+
+### Opção 1: Execução Local
+
+#### Requisitos
+- Java 21
+- Maven (ou use o Maven Wrapper incluído)
+
+#### 1. Gerar o JAR
+```powershell
+.\mvnw.cmd clean package
+```
+
+#### 2. Configurar Google Safe Browsing API (recomendado)
+```powershell
+$env:GOOGLE_API_KEY = 'SUA_CHAVE_AQUI'
+```
+
+#### 3. Iniciar a aplicação
+```powershell
+java -jar target\alerta-valores-0.0.1-SNAPSHOT.jar
+```
+
+### Opção 2: Execução com Docker
+
+#### Requisitos
+- Docker
+- Docker Compose
+
+#### 1. Construir e iniciar a aplicação
+```sh
+docker compose up --build
+```
+
+#### Detalhes do Serviço Docker
 - **Service Name:** `java-app`
-- **Exposed Port:** `8080` (mapped to host port 8080)
-- **Network:** `app-network` (custom bridge network for the service)
+- **Porta:** `8080` (mapeada para porta 8080 do host)
+- **Network:** `app-network`
+- **Segurança:** Executa como usuário não-root (`appuser`)
+- **JVM:** Configurado com `-XX:MaxRAMPercentage=80.0`
 
-### Environment Variables
-- No required environment variables are specified in the Dockerfile or Compose file by default.
-- If you need to provide environment variables, you can create a `.env` file and uncomment the `env_file` line in `docker-compose.yml`.
+## Como Testar
 
-### Special Configuration
-- The application is built and run as a non-root user (`appuser`) for improved security.
-- JVM is configured with `-XX:MaxRAMPercentage=80.0` for container-aware memory management.
-- The build skips tests for faster image creation (`-DskipTests`).
+Você pode usar qualquer cliente HTTP (cURL, Postman, REST Client) para testar a API. Exemplos usando PowerShell:
 
-### Additional Notes
-- The `.dockerignore` file should be added to the project root to exclude unnecessary files and directories from the build context (see Dockerfile comments for recommended entries).
-- No additional configuration is required unless your application needs custom environment variables or external dependencies.
+### 1. Teste com Mensagem Suspeita (Golpe)
 
----
-*Update: Docker setup instructions have been added/updated to reflect the current project configuration.*
+```powershell
+$body = @{
+    mensagem = "URGENTE: Você tem R$ 5.432,10 em valores a receber do Banco Central. Faça um PIX de R$ 10 para liberar."
+    canal = "whatsapp"
+} | ConvertTo-Json
+
+curl.exe -X POST `
+  -H "Content-Type: application/json" `
+  -d $body `
+  http://localhost:8080/api/url/verificar
+```
+
+### 2. Teste com Mensagem Benigna
+
+```powershell
+$body = @{
+    mensagem = "Para consultar valores a receber, acesse o site oficial do Banco Central"
+    url = "https://valoresareceber.bcb.gov.br"
+    canal = "email"
+} | ConvertTo-Json
+
+curl.exe -X POST `
+  -H "Content-Type: application/json" `
+  -d $body `
+  http://localhost:8080/api/url/verificar
+```
+
+### 3. Teste com URL Maliciosa
+
+```powershell
+$body = @{
+    mensagem = "Confira seus valores a receber do Banco Central"
+    url = "http://banco-central-valores.com.br"
+    canal = "sms"
+} | ConvertTo-Json
+
+curl.exe -X POST `
+  -H "Content-Type: application/json" `
+  -d $body `
+  http://localhost:8080/api/url/verificar
+```
+
+## Interpretando os Resultados
+
+A API retorna um JSON com dois campos:
+
+```json
+{
+    "seguro": false,
+    "detalhe": "⚠️ Detalhes sobre por que a mensagem é considerada suspeita..."
+}
+```
+
+### Tipos de Alertas:
+
+1. **URL Não Oficial**: Qualquer URL diferente de https://valoresareceber.bcb.gov.br
+2. **Solicitação de Pagamento**: Menções a PIX, taxa, pagamento
+3. **Dados Pessoais**: Solicitações de CPF, senha ou dados pessoais
+4. **Cartão de Crédito**: Menções a recall ou devolução de cartão
+5. **Valores Específicos**: Promessas de valores monetários específicos
+
+## Monitoramento
+
+Para monitorar o comportamento da aplicação, observe os logs no terminal. Os logs incluem:
+
+- Canal de origem da mensagem (WhatsApp, SMS, email)
+- Resultado da análise (Seguro/Suspeito)
+- Detalhes de URLs verificadas via Google Safe Browsing API

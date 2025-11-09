@@ -1,14 +1,14 @@
-package controller;
+package com.alertavalores.alerta_valores.controller;
 
-import model.ResultadoAnalise;
-import service.VerificacaoService;
-import model.AnaliseUrl;
+import com.alertavalores.alerta_valores.model.ResultadoAnalise;
+import com.alertavalores.alerta_valores.service.VerificacaoService;
+import com.alertavalores.alerta_valores.model.AnaliseUrl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/url")
+@RequestMapping("/api/verificacao")
 public class VerificacaoController {
 
     private final VerificacaoService verificacaoService;

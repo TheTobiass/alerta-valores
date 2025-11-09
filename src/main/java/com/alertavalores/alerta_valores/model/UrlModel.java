@@ -1,6 +1,6 @@
-package model;
+package com.alertavalores.alerta_valores.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "urls")

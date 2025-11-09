@@ -1,7 +1,7 @@
-package controller;
+package com.alertavalores.alerta_valores.controller;
 
-import model.UrlModel;
-import repository.UrlRepository;
+import com.alertavalores.alerta_valores.model.UrlModel;
+import com.alertavalores.alerta_valores.repository.UrlRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

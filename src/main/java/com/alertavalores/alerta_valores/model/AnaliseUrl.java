@@ -1,4 +1,4 @@
-package model;
+package com.alertavalores.alerta_valores.model;
 
 public class AnaliseUrl {
     private String mensagem;
