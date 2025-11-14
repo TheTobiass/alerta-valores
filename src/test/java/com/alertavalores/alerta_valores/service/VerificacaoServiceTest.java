@@ -32,6 +32,8 @@ public class VerificacaoServiceTest {
         AnaliseUrl request = new AnaliseUrl();
         request.setUrl("https://site-falso.com/valores-receber");
         request.setCanal("whatsapp");
+        when(googleSafeBrowsingService.checkUrl(anyString()))
+            .thenReturn(new GoogleSafeBrowsingService.UrlCheckResult(true, "URL maliciosa de teste"));
 
         ResultadoAnalise resultado = verificacaoService.analisar(request);
 
@@ -44,6 +46,8 @@ public class VerificacaoServiceTest {
         AnaliseUrl request = new AnaliseUrl();
         request.setMensagem("Para liberar seu valor, faça um PIX de R$ 10");
         request.setCanal("sms");
+        when(googleSafeBrowsingService.checkUrl(anyString()))
+            .thenReturn(new GoogleSafeBrowsingService.UrlCheckResult(false, "URL segura de teste"));
 
         ResultadoAnalise resultado = verificacaoService.analisar(request);
 
@@ -56,6 +60,8 @@ public class VerificacaoServiceTest {
         AnaliseUrl request = new AnaliseUrl();
         request.setMensagem("Confirme seus dados pessoais e CPF para receber");
         request.setCanal("email");
+        when(googleSafeBrowsingService.checkUrl(anyString()))
+            .thenReturn(new GoogleSafeBrowsingService.UrlCheckResult(false, "URL segura de teste"));
 
         ResultadoAnalise resultado = verificacaoService.analisar(request);
 
@@ -68,6 +74,8 @@ public class VerificacaoServiceTest {
         AnaliseUrl request = new AnaliseUrl();
         request.setMensagem("Você tem um recall do cartão de crédito para receber");
         request.setCanal("whatsapp");
+        when(googleSafeBrowsingService.checkUrl(anyString()))
+            .thenReturn(new GoogleSafeBrowsingService.UrlCheckResult(false, "URL segura de teste"));
 
         ResultadoAnalise resultado = verificacaoService.analisar(request);
 
@@ -80,6 +88,8 @@ public class VerificacaoServiceTest {
         AnaliseUrl request = new AnaliseUrl();
         request.setMensagem("Você tem R$ 5.000,00 disponível para saque");
         request.setCanal("sms");
+        when(googleSafeBrowsingService.checkUrl(anyString()))
+            .thenReturn(new GoogleSafeBrowsingService.UrlCheckResult(false, "URL segura de teste"));
 
         ResultadoAnalise resultado = verificacaoService.analisar(request);
 
@@ -93,6 +103,8 @@ public class VerificacaoServiceTest {
         request.setUrl("https://valoresareceber.bcb.gov.br");
         request.setMensagem("Para consultar valores a receber, acesse o site oficial do Banco Central");
         request.setCanal("email");
+        when(googleSafeBrowsingService.checkUrl(anyString()))
+            .thenReturn(new GoogleSafeBrowsingService.UrlCheckResult(false, "URL oficial de teste"));
 
         ResultadoAnalise resultado = verificacaoService.analisar(request);
 
@@ -105,8 +117,8 @@ public class VerificacaoServiceTest {
         AnaliseUrl request = new AnaliseUrl();
         request.setUrl("http://site-malicioso.com");
         request.setCanal("whatsapp");
-
-        when(googleSafeBrowsingService.isUrlMalicious(anyString())).thenReturn(true);
+        when(googleSafeBrowsingService.checkUrl(anyString()))
+            .thenReturn(new GoogleSafeBrowsingService.UrlCheckResult(true, "URL maliciosa de teste"));
 
         ResultadoAnalise resultado = verificacaoService.analisar(request);
 

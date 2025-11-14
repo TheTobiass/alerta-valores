@@ -1,17 +1,13 @@
 package com.alertavalores.alerta_valores.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "urls")
+@Document(collection = "urls")
 public class UrlModel {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true)
+    private String id;
     private String endereco;
-
     private String descricao;
 
     // Construtores, getters e setters
@@ -22,8 +18,8 @@ public class UrlModel {
         this.descricao = descricao;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     public String getEndereco() { return endereco; }
     public void setEndereco(String endereco) { this.endereco = endereco; }

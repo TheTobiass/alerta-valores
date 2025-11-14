@@ -33,5 +33,5 @@ build/
 .vscode/
 
 ### Properties
-*.properties
-resources/application.properties
+src/main/resources/client_secret.json
+src/main/resources/application.properties

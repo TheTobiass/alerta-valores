@@ -46,24 +46,24 @@
           url: (document.getElementById('url').value || '').trim(),
           canal: 'outro'
         };
-        const resp = await fetch('/api/verificacao/verificar', {
+        const resp = await fetch('/webhook/verificar-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ url: payload.url })
         });
         if (!resp.ok) throw new Error('Falha na requisição: ' + resp.status);
         const data = await resp.json();
         const div = document.createElement('div');
-        div.className = 'result ' + (data.seguro ? 'safe' : 'danger');
-        let html = `Resultado: <strong>${data.seguro ? 'Seguro' : 'Suspeito'}</strong><br><br>Detalhes:\n${data.detalhe}`;
+        div.className = 'result ' + (data.segura ? 'safe' : 'danger');
+        let html = `Resultado: <strong>${data.segura ? 'Seguro' : 'Suspeito'}</strong><br><br>Detalhes:<br>${data.detalhes ? data.detalhes : ''}`;
         if (data.url) {
-          html += `\n\nURL analisada: ${data.url}`;
-          if (typeof data.urlSuspeita !== 'undefined' && data.urlSuspeita !== null) {
-            html += `\nStatus da URL: ${data.urlSuspeita ? 'Suspeita/Maliciosa' : 'Sem registros de ameaça'}`;
-          }
-          if (data.urlDetalhe) {
-            html += `\n${data.urlDetalhe}`;
-          }
+          html += `<br><br><strong>URL analisada:</strong> ${data.url}`;
+        }
+        if (typeof data.segura !== 'undefined' && data.segura !== null) {
+          html += `<br><strong>Status da URL:</strong> ${data.segura ? 'Sem registros de ameaça' : 'Suspeita/Maliciosa'}`;
+        }
+        if (data.rawResponse) {
+          html += `<br><br><strong>Resposta bruta da API Google Safe Browsing:</strong><br><pre>${JSON.stringify(data.rawResponse, null, 2)}</pre>`;
         }
         div.innerHTML = html;
         saida.appendChild(div);
