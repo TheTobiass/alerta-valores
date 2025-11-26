@@ -3,6 +3,8 @@ package com.alertavalores.alerta_valores.service;
 import org.springframework.stereotype.Service;
 import com.alertavalores.alerta_valores.model.AnaliseUrl;
 import com.alertavalores.alerta_valores.model.ResultadoAnalise;
+import com.alertavalores.alerta_valores.repository.ResultadoAnaliseRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
@@ -10,6 +12,9 @@ public class VerificacaoService {
 
     @Autowired
     private GoogleSafeBrowsingService googleSafeBrowsingService;
+
+    @Autowired
+    private ResultadoAnaliseRepository resultadoAnaliseRepository;
 
     public ResultadoAnalise analisar(AnaliseUrl req) {
         boolean textoSuspeito = contemPalavrasDeGolpe(req.getMensagem());
@@ -38,6 +43,7 @@ public class VerificacaoService {
             r.setSeguro(true);
             r.setDetalhe("Nenhum indício de golpe encontrado.");
         }
+        resultadoAnaliseRepository.save(r);
         return r;
     }
 
