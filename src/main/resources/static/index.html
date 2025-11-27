@@ -1,83 +1,299 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Alerta de Golpes - Demo</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    body { font-family: system-ui, Arial; margin: 2rem; background:#f7f9fb; }
-    h1 { font-size:1.4rem; }
-    form { display:flex; flex-direction:column; gap:.75rem; max-width:640px; }
-    textarea { width:100%; min-height:140px; padding:.75rem; font-family:inherit; }
-    select,input[type=text] { padding:.5rem; }
-    button { background:#0d6efd; color:#fff; border:none; padding:.75rem 1.25rem; cursor:pointer; border-radius:4px; font-weight:600; }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    .result { margin-top:1.5rem; padding:1rem; border-radius:6px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.08); white-space:pre-wrap; }
-    .danger { border-left:6px solid #dc3545; }
-    .safe { border-left:6px solid #198754; }
-    .loading { opacity:.6; }
-    footer { margin-top:3rem; font-size:.75rem; color:#555; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Valores - Detecção de Golpes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .response-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .response-section.active {
+            display: block;
+        }
+
+        .response-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.seguro {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .status.suspeito {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .details {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+        }
+
+        .details p {
+            margin-bottom: 8px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .details strong {
+            color: #333;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .loading {
+            opacity: 0.6;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-  <h1>Verificação de Golpes</h1>
-  <p>Cole abaixo a mensagem que você recebeu. Vamos analisar e dizer se é suspeita de golpe.</p>
-  <form id="formVerificacao">
-    <label for="mensagem">Mensagem recebida:</label>
-    <textarea name="mensagem" id="mensagem" placeholder="Cole aqui a mensagem..." required></textarea>
-    <label for="url">URL (opcional):</label>
-    <input type="text" id="url" name="url" placeholder="https://exemplo.com" />
-    <button id="btnVerificar" type="submit">Analisar</button>
-  </form>
-  <div id="saida"></div>
+    <div class="container">
+        <h1>🛡️ Alerta de Valores</h1>
+        <p class="subtitle">Detecção de Golpes em Mensagens e URLs</p>
 
-  <script>
-    const form = document.getElementById('formVerificacao');
-    const saida = document.getElementById('saida');
-    const btn = document.getElementById('btnVerificar');
+        <form id="verificacaoForm">
+            <div class="form-group">
+                <label for="mensagem">Mensagem recebida:</label>
+                <textarea id="mensagem" name="mensagem" placeholder="Cole aqui a mensagem que você recebeu..." required></textarea>
+            </div>
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      saida.innerHTML = '';
-      btn.disabled = true; btn.classList.add('loading');
-      try {
-        const payload = {
-          mensagem: document.getElementById('mensagem').value.trim(),
-          url: (document.getElementById('url').value || '').trim(),
-          canal: 'outro'
-        };
-        const resp = await fetch('/webhook/verificar-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: payload.url })
+            <div class="form-group">
+                <label for="url">URL (opcional):</label>
+                <input type="text" id="url" name="url" placeholder="https://exemplo.com">
+            </div>
+
+            <button type="submit" id="btnAnalisar">Analisar</button>
+        </form>
+
+        <div id="response" class="response-section">
+            <h3>Resultado da Análise</h3>
+            <div id="responseContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('verificacaoForm');
+        const responseDiv = document.getElementById('response');
+        const responseContent = document.getElementById('responseContent');
+        const btnAnalisar = document.getElementById('btnAnalisar');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            responseDiv.classList.remove('active');
+            responseContent.innerHTML = '';
+            btnAnalisar.disabled = true;
+            btnAnalisar.innerHTML = '<span class="spinner"></span>Analisando...';
+
+            try {
+                const payload = {
+                    mensagem: document.getElementById('mensagem').value.trim(),
+                    url: document.getElementById('url').value.trim() || null
+                };
+
+                const response = await fetch('/webhook/verificar-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                let html = '';
+                const statusClass = data.segura ? 'seguro' : 'suspeito';
+                const statusText = data.segura ? '✅ SEGURO' : '⚠️ SUSPEITO - POSSÍVEL GOLPE';
+
+                html += `<div class="status ${statusClass}">${statusText}</div>`;
+
+                html += '<div class="details">';
+                html += `<p><strong>Status:</strong> ${data.segura ? 'Nenhum indício de golpe detectado' : 'Padrão de golpe identificado'}</p>`;
+                
+                if (data.detalhes) {
+                    html += `<p><strong>Detalhes:</strong></p>`;
+                    html += `<p>${data.detalhes.replace(/\n/g, '<br>')}</p>`;
+                }
+
+                if (data.url) {
+                    html += `<p><strong>URL Analisada:</strong> ${escapeHtml(data.url)}</p>`;
+                    if (data.urlSuspeita !== null) {
+                        html += `<p><strong>URL Segura:</strong> ${data.urlSuspeita ? 'Não' : 'Sim'}</p>`;
+                        if (data.urlDetalhe) {
+                            html += `<p><strong>Detalhe da URL:</strong> ${escapeHtml(data.urlDetalhe)}</p>`;
+                        }
+                    }
+                }
+
+                html += '</div>';
+
+                responseContent.innerHTML = html;
+                responseDiv.classList.add('active');
+
+            } catch (error) {
+                responseContent.innerHTML = `<div class="error"><strong>Erro:</strong> ${escapeHtml(error.message)}</div>`;
+                responseDiv.classList.add('active');
+            } finally {
+                btnAnalisar.disabled = false;
+                btnAnalisar.innerHTML = 'Analisar';
+            }
         });
-        if (!resp.ok) throw new Error('Falha na requisição: ' + resp.status);
-        const data = await resp.json();
-        const div = document.createElement('div');
-        div.className = 'result ' + (data.segura ? 'safe' : 'danger');
-        let html = `Resultado: <strong>${data.segura ? 'Seguro' : 'Suspeito'}</strong><br><br>Detalhes:<br>${data.detalhes ? data.detalhes : ''}`;
-        if (data.url) {
-          html += `<br><br><strong>URL analisada:</strong> ${data.url}`;
-        }
-        if (typeof data.segura !== 'undefined' && data.segura !== null) {
-          html += `<br><strong>Status da URL:</strong> ${data.segura ? 'Sem registros de ameaça' : 'Suspeita/Maliciosa'}`;
-        }
-        if (data.rawResponse) {
-          html += `<br><br><strong>Resposta bruta da API Google Safe Browsing:</strong><br><pre>${JSON.stringify(data.rawResponse, null, 2)}</pre>`;
-        }
-        div.innerHTML = html;
-        saida.appendChild(div);
-      } catch (err) {
-        const div = document.createElement('div');
-        div.className = 'result danger';
-        div.textContent = 'Erro: ' + err.message;
-        saida.appendChild(div);
-      } finally {
-        btn.disabled = false; btn.classList.remove('loading');
-      }
-    });
-  </script>
 
-  <footer>Demo local. Em produção, proteger o endpoint com autenticação / rate limit e registrar auditoria.</footer>
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
 </body>
 </html>

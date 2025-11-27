@@ -49,7 +49,11 @@ public class WebhookController {
     public ResponseEntity<?> verificarUrl(@RequestBody Map<String, String> payload) {
         logger.info("Iniciando verificação de URL via webhook");
         String url = payload.get("url");
+        // Aceita tanto "message" (English) quanto "mensagem" (Portuguese)
         String message = payload.get("message");
+        if (message == null) {
+            message = payload.get("mensagem");
+        }
         String erro = null;
         Boolean segura = null;
         String detalhes = null;
