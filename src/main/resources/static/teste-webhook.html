@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Webhook - Verificação de URL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .response-section.show {
+            display: block;
+        }
+
+        .response-title {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .response-content {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .response-content.success {
+            border-left-color: #28a745;
+        }
+
+        .response-content.error {
+            border-left-color: #dc3545;
+        }
+
+        .response-content.loading {
+            border-left-color: #ffc107;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .success-message {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .status-badge.safe {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.unsafe {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teste de Verificação de URL e Mensagens</h1>
+
+        <div class="form-group">
+            <label for="messageInput">Mensagem para Verificar:</label>
+            <textarea 
+                id="messageInput" 
+                placeholder="Digite a mensagem que você recebeu (opcional)" 
+                rows="4"
+            ></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="urlInput">URL para Verificar:</label>
+            <input 
+                type="text" 
+                id="urlInput" 
+                placeholder="https://www.exemplo.com.br (opcional)" 
+                value="https://www.google.com"
+            >
+        </div>
+
+        <button onclick="verificarUrl()">Analisar</button>
+
+        <div class="response-section" id="responseSection">
+            <div class="response-title">Resultado:</div>
+            <div class="response-content" id="responseContent"></div>
+        </div>
+    </div>
+
+    <script>
+        function verificarUrl() {
+            const message = document.getElementById('messageInput').value;
+            const url = document.getElementById('urlInput').value;
+
+            if (!url.trim() && !message.trim()) {
+                alert('Por favor, insira uma URL ou uma mensagem!');
+                return;
+            }
+
+            const responseSection = document.getElementById('responseSection');
+            const responseContent = document.getElementById('responseContent');
+
+            responseContent.className = 'response-content loading';
+            responseContent.innerHTML = '<div class="loading-spinner"></div>Analisando...';
+            responseSection.classList.add('show');
+
+            fetch('/webhook/verificar-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    url: url.trim() || null, 
+                    message: message.trim() || null 
+                })
+            })
+            .then(response => response.json().then(data => ({ status: response.status, data })))
+            .then(({ status, data }) => {
+                // 200 = seguro, 400 = suspeito, 500/503 = erro
+                const isSafe = status === 200;
+                const isSuspicious = status === 400;
+                const isError = status >= 500;
+
+                if (isError) {
+                    responseContent.className = 'response-content error';
+                } else {
+                    responseContent.className = isSafe ? 'response-content success' : 'response-content error';
+                }
+
+                let html = '';
+
+                // Status principal
+                if (isSafe) {
+                    html += '<span class="status-badge safe">✓ Análise Segura</span><br><br>';
+                } else if (isSuspicious) {
+                    html += '<span class="status-badge unsafe">✗ Conteúdo Suspeito Detectado</span><br><br>';
+                } else if (isError) {
+                    html += '<span class="status-badge unsafe">✗ Erro na Análise</span><br><br>';
+                }
+
+                // URL
+                if (data.url) {
+                    html += '<strong>URL Analisada:</strong><br>';
+                    html += '<code>' + data.url + '</code><br><br>';
+                }
+
+                // Mensagem
+                if (data.message) {
+                    html += '<strong>Mensagem Analisada:</strong><br>';
+                    html += '<code style="word-break: break-all;">' + data.message + '</code><br><br>';
+                }
+
+                // Status de Segurança
+                html += '<strong>Status Geral:</strong><br>';
+                html += '<code>' + (data.segura ? '✓ Seguro' : '✗ Suspeito') + '</code><br><br>';
+
+                // Detalhes
+                html += '<strong>Detalhes da Análise:</strong><br>';
+                html += '<code>' + (data.detalhes || 'Sem detalhes') + '</code><br><br>';
+
+                // Status da URL (se verificada)
+                if (data.urlSuspeita !== undefined) {
+                    html += '<strong>Status da URL:</strong><br>';
+                    html += '<code>' + (data.urlSuspeita ? '⚠️ URL Suspeita' : '✓ URL Segura') + '</code><br><br>';
+                }
+
+                // Detalhes da URL (se houver)
+                if (data.urlDetalhe) {
+                    html += '<strong>Detalhes da URL:</strong><br>';
+                    html += '<code>' + data.urlDetalhe + '</code><br><br>';
+                }
+
+                // Erro (se existir)
+                if (data.erro) {
+                    html = '<span class="error-message">❌ Erro:</span><br>' + data.erro + '<br><br>';
+                    html += '<strong>Detalhes:</strong><br>' + (data.detalhes || 'Sem detalhes');
+                }
+
+                // Status HTTP
+                html += '<br><strong>Status HTTP:</strong> <code>' + status + '</code>';
+
+                responseContent.innerHTML = html;
+            })
+            .catch(error => {
+                responseContent.className = 'response-content error';
+                responseContent.innerHTML = '<span class="error-message">❌ Erro na Requisição:</span><br>' + error.message;
+            });
+        }
+
+        // Permitir enviar com Ctrl+Enter ou Cmd+Enter no textarea
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if ((e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
+                verificarUrl();
+            }
+        });
+
+        // Permitir enviar com Enter no input
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verificarUrl();
+            }
+        });
+    </script>
+</body>
+</html>
